@@ -166,28 +166,32 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         cv2.destroyAllWindows()
 
     def findIntrinsic(self):
+        chess_images = glob.glob(self.dirPath)
+        # define criteria = (type, max_iter, epsilon)
+        criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
+        objp = np.zeros((11 * 8, 3), np.float32)
+        objp[:, :2] = np.mgrid[0:8, 0:11].T.reshape(-1, 2)
 
-        chess_images = glob.glob(self.dirPath+'/*.bmp')
-        print(len(chess_images))
+        objpoints = []  # 3d point in real world space
+        imgpoints = []  # 2d points in image plane
 
-        # # define criteria = (type, max_iter, epsilon)
-        # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-        #
-        # objp = np.zeros((11 * 8, 3), np.float32)
-        # objp[:, :2] = np.mgrid[0:8, 0:11].T.reshape(-1, 2)
-        #
-        # objpoints = []  # 3d point in real world space
-        # imgpoints = []  # 2d points in image plane
-        #
-        # for i in range(len(chess_images)):
-        #     # Read in the image
-        #     image = cv2.imread(chess_images[i])
-        #     # Convert to grayscale
-        #     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        #     # Find the chessboard corners
-        #     ret, corners = cv2.findChessboardCorners(gray, (8, 11), None)
+        for i in range(len(chess_images)):
+            # Read in the image
+            image = cv2.imread(chess_images[i])
+            # Convert to grayscale
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            # Find the chessboard corners
+            ret, corners = cv2.findChessboardCorners(gray, (8, 11), None)
 
+            if ret == True:
+                objpoints.append(objp)
+                corners2 = cv2.cornerSubPix(gray, corners, (7, 7), (-1, -1), criteria)
+                imgpoints.append(corners2)
+
+        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+        print("Intrinsic matrix:")
+        print(mtx)
 
     # def findExtrinsic():
 
