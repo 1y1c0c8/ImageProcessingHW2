@@ -19,7 +19,7 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.setup_control()
         self.path1 = ""
         self.path2 = ""
-        self.folderPath = ""
+        self.dirPath = ""
 
 
     # Connection
@@ -43,20 +43,19 @@ class MainWindow_controller(QtWidgets.QMainWindow):
     #     ============================
         self.dirPath = QFileDialog.getExistingDirectory()
         self.ui.loadFolderLabel.setText(self.dirPath)
-        print(self.dirPath)
-
+        # print(self.dirPath)
 
     def loadImgL(self):
         self.path1, filetype = QFileDialog.getOpenFileName(self,
                                                           "Open file",
-                                                          ".")
+                                                          self.dirPath)
         filename = os.path.basename(self.path1)
         self.ui.loadImageLLabel.setText(filename)
 
     def loadImgR(self):
         self.path2, filetype = QFileDialog.getOpenFileName(self,
                                                           "Open file",
-                                                          ".")
+                                                          self.dirPath)
         filename = os.path.basename(self.path2)
         self.ui.loadImageRLabel.setText(filename)
 
