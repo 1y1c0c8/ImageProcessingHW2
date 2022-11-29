@@ -32,7 +32,7 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.ui.CountRingButton.clicked.connect(self.countRing)
 
         self.ui.findCornerButton.clicked.connect(self.findCorner)
-
+        self.ui.findIntrinsicButton.clicked.connect(self.findIntrinsic)
 
     #Functions
     def loadFolder(self):
@@ -43,7 +43,7 @@ class MainWindow_controller(QtWidgets.QMainWindow):
     #     ============================
         self.dirPath = QFileDialog.getExistingDirectory()
         self.ui.loadFolderLabel.setText(self.dirPath)
-        # print(self.dirPath)
+        self.dirPath = os.path.join(self.dirPath, "*.bmp")
 
     def loadImgL(self):
         self.path1, filetype = QFileDialog.getOpenFileName(self,
@@ -133,9 +133,8 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         cv2.destroyAllWindows()
 
     def findCorner(self):
-        # print(self.dirPath)
-        chess_images = glob.glob('./Q2_Image/*.bmp')
-        print(len(chess_images))
+        chess_images = glob.glob(self.dirPath)
+        # print(len(chess_images))
 
         for i in range(len(chess_images)):
             # time.sleep(0.5)
@@ -166,7 +165,29 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    # def findIntrinsic():
+    def findIntrinsic(self):
+
+
+        chess_images = glob.glob(self.dirPath+'/*.bmp')
+        print(len(chess_images))
+
+        # # define criteria = (type, max_iter, epsilon)
+        # criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+        #
+        # objp = np.zeros((11 * 8, 3), np.float32)
+        # objp[:, :2] = np.mgrid[0:8, 0:11].T.reshape(-1, 2)
+        #
+        # objpoints = []  # 3d point in real world space
+        # imgpoints = []  # 2d points in image plane
+        #
+        # for i in range(len(chess_images)):
+        #     # Read in the image
+        #     image = cv2.imread(chess_images[i])
+        #     # Convert to grayscale
+        #     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        #     # Find the chessboard corners
+        #     ret, corners = cv2.findChessboardCorners(gray, (8, 11), None)
+
 
     # def findExtrinsic():
 
