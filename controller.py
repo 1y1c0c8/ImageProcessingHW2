@@ -44,6 +44,9 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.ui.findDistortionButton.clicked.connect(self.findDistortion)
         self.ui.showResultButton.clicked.connect(self.showResult)
 
+
+        self.ui.StereDisparityMapBox.clicked.connect(self.st)
+
     #Functions
     def loadFolder(self):
 
@@ -257,5 +260,5 @@ class MainWindow_controller(QtWidgets.QMainWindow):
 
     # def showWordsVertically():
 
-    # def stereoDisparityMap():
+    def stereoDisparityMap():
 
