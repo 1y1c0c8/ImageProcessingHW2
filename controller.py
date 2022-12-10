@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import QFileDialog
 
+
 import os
 from PIL import Image
 import cv2
@@ -21,6 +22,12 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.path2 = ""
         self.dirPath = ""
 
+        # self.mtx = np.array([[2.22484480e+03, 0.00000000e+00, 1.03009432e+03],
+        #                 [0.00000000e+00, 2.22404212e+03, 1.03961767e+03],
+        #                 [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
+        #
+        # self.dist = np.array([[-0.12541579, 0.07937593, -0.00072728, 0.0005207, 0.01956878]])
+
 
     # Connection
     def setup_control(self):
@@ -33,6 +40,9 @@ class MainWindow_controller(QtWidgets.QMainWindow):
 
         self.ui.findCornerButton.clicked.connect(self.findCorner)
         self.ui.findIntrinsicButton.clicked.connect(self.findIntrinsic)
+        self.ui.findExtrinsicButton.clicked.connect(self.findExtrinsic)
+        self.ui.findDistortionButton.clicked.connect(self.findDistortion)
+        self.ui.showResultButton.clicked.connect(self.showResult)
 
     #Functions
     def loadFolder(self):
@@ -173,8 +183,8 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         objp = np.zeros((11 * 8, 3), np.float32)
         objp[:, :2] = np.mgrid[0:8, 0:11].T.reshape(-1, 2)
 
-        objpoints = []  # 3d point in real world space
-        imgpoints = []  # 2d points in image plane
+        self.objpoints = []  # 3d point in real world space
+        self.imgpoints = []  # 2d points in image plane
 
         for i in range(len(chess_images)):
             # Read in the image
@@ -185,21 +195,65 @@ class MainWindow_controller(QtWidgets.QMainWindow):
             ret, corners = cv2.findChessboardCorners(gray, (8, 11), None)
 
             if ret == True:
-                objpoints.append(objp)
+                self.objpoints.append(objp)
                 corners2 = cv2.cornerSubPix(gray, corners, (7, 7), (-1, -1), criteria)
-                imgpoints.append(corners2)
+                self.imgpoints.append(corners2)
 
-        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
-        print("Intrinsic matrix:")
-        print(mtx)
+        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(self.objpoints, self.imgpoints, gray.shape[::-1], None, None)
 
-    # def findExtrinsic():
+        print(f"Intrinsic matrix:\n{mtx}")
 
-    # def findDistortion():
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
-    # def showResult():
+    def findExtrinsic(self):
+        str_inputNum = self.ui.comboBox.currentText()
+        int_inputNum = int(str_inputNum)
 
-    # def showWordsOnBoard():
+        ret, self.mtx, self.dist, rvecs, tvecs = cv2.calibrateCamera(self.objpoints, self.imgpoints, (2048, 2048), None, None)
+        R = cv2.Rodrigues(rvecs[int_inputNum - 1])
+        ext = np.hstack((R[0], tvecs[int_inputNum - 1]))
+        print(f'Extrinsic matrix:\n{ext}')
+
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    def findDistortion(self):
+        # ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(self.objpoints, self.imgpoints, (2048, 2048), None, None)
+        print(f'Distortion:\n{self.dist}')
+
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+
+    def showResult(self):
+
+        chess_images = glob.glob(self.dirPath)
+
+        for i in range(len(chess_images)):
+
+            img = cv2.imread(chess_images[i])
+            h, w = img.shape[:2]
+            newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(self.mtx, self.dist, (w,h), 1, (w,h))
+            dst = cv2.undistort(img, self.mtx, self.dist, None, newCameraMatrix)
+
+            x,y,w,h = roi
+            dst = dst[y:y+h, x:x+w]
+
+            img = cv2.resize(img, (img.shape[0] // 2, img.shape[1] // 2))
+            dst = cv2.resize(img, (img.shape[0], img.shape[1]))
+
+            result = np.hstack((img, dst))
+            cv2.imshow("Result", result)
+            cv2.waitKey(500)
+            cv2.destroyWindow('Result')
+
+
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    # def showWordsOnBoard(self):
+
 
     # def showWordsVertically():
 
