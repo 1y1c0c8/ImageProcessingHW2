@@ -9,6 +9,7 @@ import numpy as np
 from tkinter import filedialog
 import glob
 import time
+import utils
 
 from UI import Ui_MainWindow
 
@@ -21,6 +22,14 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.path1 = ""
         self.path2 = ""
         self.dirPath = ""
+        self.char_in_board = [  # coordinate for 6 charter in board (x, y) ==> (w, h)
+            [7, 5, 0],  # slot 1
+            [4, 5, 0],  # slot 2
+            [1, 5, 0],  # slot 3
+            [7, 2, 0],  # slot 4
+            [4, 2, 0],  # slot 5
+            [1, 2, 0]  # slot 6
+        ]
 
         # self.mtx = np.array([[2.22484480e+03, 0.00000000e+00, 1.03009432e+03],
         #                 [0.00000000e+00, 2.22404212e+03, 1.03961767e+03],
@@ -39,14 +48,13 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.ui.CountRingButton.clicked.connect(self.countRing)
 
         self.ui.findCornerButton.clicked.connect(self.findCorner)
-        self.ui.findIntrinsicButton.clicked.connect(self.findIntrinsic)
-        self.ui.findExtrinsicButton.clicked.connect(self.findExtrinsic)
-        self.ui.findDistortionButton.clicked.connect(self.findDistortion)
+        self.ui.findIntrinsicButton.clicked.connect(self.findParamAndPrintIntrinsic)
+        self.ui.findExtrinsicButton.clicked.connect(self.printExtrinsic)
+        self.ui.findDistortionButton.clicked.connect(self.printDistortion)
         self.ui.showResultButton.clicked.connect(self.showResult)
+        # self.ui.showWordsOnBoardButton.clicked.connect(self.showWordsOnBoard)
 
-
-        self.ui.StereDisparityMapBox.clicked.connect(self.st)
-
+        self.ui.showDisparityMapButton.clicked.connect(self.stereoDisparityMap)
     #Functions
     def loadFolder(self):
 
@@ -178,7 +186,7 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    def findIntrinsic(self):
+    def findParam(self):
         chess_images = glob.glob(self.dirPath)
         # define criteria = (type, max_iter, epsilon)
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -202,27 +210,29 @@ class MainWindow_controller(QtWidgets.QMainWindow):
                 corners2 = cv2.cornerSubPix(gray, corners, (7, 7), (-1, -1), criteria)
                 self.imgpoints.append(corners2)
 
-        ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(self.objpoints, self.imgpoints, gray.shape[::-1], None, None)
+        ret, self.mtx, self.dist, self.rvecs, self.tvecs = cv2.calibrateCamera(self.objpoints, self.imgpoints, gray.shape[::-1], None, None)
 
-        print(f"Intrinsic matrix:\n{mtx}")
-
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
-    def findExtrinsic(self):
         str_inputNum = self.ui.comboBox.currentText()
         int_inputNum = int(str_inputNum)
+        R = cv2.Rodrigues(self.rvecs[int_inputNum - 1])
+        self.ext = np.hstack((R[0], self.tvecs[int_inputNum - 1]))
 
-        ret, self.mtx, self.dist, rvecs, tvecs = cv2.calibrateCamera(self.objpoints, self.imgpoints, (2048, 2048), None, None)
-        R = cv2.Rodrigues(rvecs[int_inputNum - 1])
-        ext = np.hstack((R[0], tvecs[int_inputNum - 1]))
-        print(f'Extrinsic matrix:\n{ext}')
 
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    def findDistortion(self):
-        # ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(self.objpoints, self.imgpoints, (2048, 2048), None, None)
+    def findParamAndPrintIntrinsic(self):
+        self.findParam()
+        print(f'Intrinsic matrix:\n{self.mtx}')
+
+    def printExtrinsic(self):
+
+        print(f'Extrinsic matrix:\n{self.ext}')
+
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    def printDistortion(self):
         print(f'Distortion:\n{self.dist}')
 
         cv2.waitKey(0)
@@ -234,14 +244,13 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         chess_images = glob.glob(self.dirPath)
 
         for i in range(len(chess_images)):
-
             img = cv2.imread(chess_images[i])
             h, w = img.shape[:2]
-            newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(self.mtx, self.dist, (w,h), 1, (w,h))
+            newCameraMatrix, roi = cv2.getOptimalNewCameraMatrix(self.mtx, self.dist, (w, h), 1, (w, h))
             dst = cv2.undistort(img, self.mtx, self.dist, None, newCameraMatrix)
 
-            x,y,w,h = roi
-            dst = dst[y:y+h, x:x+w]
+            x, y, w, h = roi
+            dst = dst[y:y + h, x:x + w]
 
             img = cv2.resize(img, (img.shape[0] // 2, img.shape[1] // 2))
             dst = cv2.resize(img, (img.shape[0], img.shape[1]))
@@ -256,9 +265,35 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         cv2.destroyAllWindows()
 
     # def showWordsOnBoard(self):
+    #     # chess_images = glob.glob(self.dirPath)
+    #
+    #     # 1.Calibrate: get Intrinsic(self.mtx), distortion(self.dist), extrinsic(self.ext)
+    #     self.findParam()
+    #
+    #     # 2.Input a “Word” less than 6 char in English in the textEdit box
+    #     self.string = self.ui.lineEdit.text()[:6].upper()
+    #
+    #
+    #
+    #
+    #     print(self.string)
+    #
+    #     cv2.waitKey(0)
+    #     cv2.destroyAllWindows()
 
 
     # def showWordsVertically():
 
-    def stereoDisparityMap():
+    def stereoDisparityMap(self):
+        # imgL = cv2.imread(self.path1)
+        # imgR = cv2.imread(self.path2)
+        #
+        # stereo = cv2.StereoBM_create(numDisparities = 16, blockSize = 15)
+        # print('Created')
+        # disparity = stereo.compute(imgL, imgR)
+        # print('Computed')
+        #
+        # cv2.imshow('Result', disparity)
 
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
