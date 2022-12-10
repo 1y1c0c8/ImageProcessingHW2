@@ -349,7 +349,7 @@ There are __ rings in img2.jpg</string>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_5">
          <item>
-          <widget class="QPushButton" name="shoDisparityMapButton">
+          <widget class="QPushButton" name="showDisparityMapButton">
            <property name="text">
             <string>4.1 Show Disparity Map</string>
            </property>
