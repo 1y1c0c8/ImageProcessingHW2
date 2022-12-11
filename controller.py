@@ -215,14 +215,6 @@ class MainWindow_controller(QtWidgets.QMainWindow):
 
         ret, self.mtx, self.dist, self.rvecs, self.tvecs = cv2.calibrateCamera(self.objpoints, self.imgpoints, gray.shape[::-1], None, None)
 
-        # print(type(self.objpoints))
-        # print(self.objpoints)
-        # print(len(self.objpoints))
-        # print(len(self.objpoints[0]))
-        # print(type(self.imgpoints))
-        # print(self.imgpoints)
-        # print(len(self.imgpoints))
-        # print(len(self.imgpoints[0]))
 
         str_inputNum = self.ui.comboBox.currentText()
         int_inputNum = int(str_inputNum)
@@ -296,10 +288,10 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         index = 0
         if co == (0,2):
             index = base-2
-        elif co == (1,0):
+        elif co == (0,1):
             index = base-1
         elif co == (0,0):
-            index = base
+            index = base+0
         elif co == (1,2):
             index = base+6
         elif co == (1,1):
@@ -317,14 +309,29 @@ class MainWindow_controller(QtWidgets.QMainWindow):
     def drawLine(self, img, indexStart, indexEnd):
         x1 = int(tuple(self.imgpoints[0][indexStart][0])[0] // 4)
         y1 = int(tuple(self.imgpoints[0][indexStart][0])[1] // 4)
-        print((x1, y1))
+        # print(indexStart)
+        # print((x1, y1))
 
         x2 = int(tuple(self.imgpoints[0][indexEnd][0])[0] // 4)
         y2 = int(tuple(self.imgpoints[0][indexEnd][0])[1] // 4)
-        print((x2, y2))
+        # print(indexEnd)
+        # print((x2, y2))
 
         cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 5)
 
+    def drawAnAlphabet(self, img, alphabet, alphabetIndex):
+        lineList = self.getLineList(alphabet)
+
+        for line in lineList:
+            COs = self.getEndpointsCoordinate(line)
+            base = self.base[alphabetIndex]
+            print(COs[0])
+            print(COs[1])
+            index0 = self.baseToIndex(COs[0], base)
+            index1 = self.baseToIndex(COs[1], base)
+
+
+            self.drawLine(img, index0, index1)
 
 
     def showWordsOnBoard(self):
@@ -338,27 +345,9 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         # 3.Derive the shape of the “Word” by using the provided library
         self.fs = cv2.FileStorage('Q3_Image/Q2_lib/alphabet_lib_onboard.txt', cv2.FILE_STORAGE_READ)
 
-        # ch = self.fs.getNode('K').mat()
-        # print(type(ch))
-        # print(ch)
-        # print(tuple(ch[0][0]))
 
         alphabet = 'K'
         self.string = self.ui.lineEdit.text()[:6].upper()
-
-
-        # for alphabet in self.string:
-        #     print(f'{alphabet}')
-        #     lineList = self.getLineList(alphabet)
-        #
-        #     index = 0
-        #
-        #     for line in lineList:
-        #         co = self.getEndpointsCoordinate(line)
-        #         addOffsetCo = self.addOffset(co, index)
-        #         print(f'co:{co}')
-        #         index = index+1
-        #     print(f'===================')
 
 
         chess_images = glob.glob(self.dirPath)
@@ -366,17 +355,16 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         img = cv2.resize(img, (img.shape[0]//4, img.shape[1]//4))
 
 
-        lineList = self.getLineList(alphabet)
+        # self.drawAnAlphabet(img, alphabet, 0)
 
-        for line in lineList:
-            COs = self.getEndpointsCoordinate(line)
-            base = self.base[0]
-            index0 = self.baseToIndex(COs[0], base)
-            index1 = self.baseToIndex(COs[1], base)
+        alphabetIndex = 0
+        for alphabet in self.string:
+            self.drawAnAlphabet(img, alphabet, alphabetIndex)
+            alphabetIndex = alphabetIndex+1
 
-            self.drawLine(img, index0, index1)
 
         cv2.imshow('result', img)
+        print('==========================')
 
         # for index in range(len(chess_images)):
         #     img = cv2.imread(chess_images[index])
