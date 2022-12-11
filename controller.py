@@ -350,37 +350,23 @@ class MainWindow_controller(QtWidgets.QMainWindow):
 
         self.string = self.ui.lineEdit.text()[:6].upper()
 
-
-
-
-
-        imgIndex = 1
-        alphabetIndex = 0
-
         chess_images = glob.glob(self.dirPath)
-        img = cv2.imread(chess_images[imgIndex])
-        img = cv2.resize(img, (img.shape[0] // 4, img.shape[1] // 4))
 
-        for alphabet in self.string:
-            self.drawAnAlphabet(img, imgIndex, alphabet, alphabetIndex)
-            alphabetIndex = alphabetIndex+1
+        for imgIndex in range(len(chess_images)):
 
-        cv2.imshow('result', img)
-        print('==========================')
+            alphabetIndex = 0
 
-        # for index in range(len(chess_images)):
-        #     img = cv2.imread(chess_images[index])
-        #     img = cv2.resize(img, (img.shape[0]//4, img.shape[1]//4))
-        #     # cv2.imshow('img', img)
-        #     # cv2.waitKey(500)
-        #
-        #     for line in range(len(ch)):
-        #         cv2.line(img, tuple(ch[line][0]), tuple(ch[line][1]), (0,0,255), 5)
-        #     cv2.imshow('Result', img)
-        #     cv2.waitKey(500)
-        #     cv2.destroyWindow('Result')
+            img = cv2.imread(chess_images[imgIndex])
+            img = cv2.resize(img, (img.shape[0] // 4, img.shape[1] // 4))
 
+            for alphabet in self.string:
+                self.drawAnAlphabet(img, imgIndex, alphabet, alphabetIndex)
+                alphabetIndex = alphabetIndex+1
 
+            cv2.imshow('result', img)
+            cv2.waitKey(500)
+            cv2.destroyWindow('result')
+            print('==========================')
 
         cv2.waitKey(0)
         cv2.destroyAllWindows()
