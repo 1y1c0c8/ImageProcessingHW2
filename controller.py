@@ -30,6 +30,9 @@ class MainWindow_controller(QtWidgets.QMainWindow):
             [4, 2, 0],  # slot 5
             [1, 2, 0]  # slot 6
         ]
+        self.base = [
+            58, 34, 10, 61, 37, 13
+        ]
 
         # self.mtx = np.array([[2.22484480e+03, 0.00000000e+00, 1.03009432e+03],
         #                 [0.00000000e+00, 2.22404212e+03, 1.03961767e+03],
@@ -52,7 +55,7 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.ui.findExtrinsicButton.clicked.connect(self.printExtrinsic)
         self.ui.findDistortionButton.clicked.connect(self.printDistortion)
         self.ui.showResultButton.clicked.connect(self.showResult)
-        # self.ui.showWordsOnBoardButton.clicked.connect(self.showWordsOnBoard)
+        self.ui.showWordsOnBoardButton.clicked.connect(self.showWordsOnBoard)
 
         self.ui.showDisparityMapButton.clicked.connect(self.stereoDisparityMap)
     #Functions
@@ -212,6 +215,15 @@ class MainWindow_controller(QtWidgets.QMainWindow):
 
         ret, self.mtx, self.dist, self.rvecs, self.tvecs = cv2.calibrateCamera(self.objpoints, self.imgpoints, gray.shape[::-1], None, None)
 
+        # print(type(self.objpoints))
+        # print(self.objpoints)
+        # print(len(self.objpoints))
+        # print(len(self.objpoints[0]))
+        # print(type(self.imgpoints))
+        # print(self.imgpoints)
+        # print(len(self.imgpoints))
+        # print(len(self.imgpoints[0]))
+
         str_inputNum = self.ui.comboBox.currentText()
         int_inputNum = int(str_inputNum)
         R = cv2.Rodrigues(self.rvecs[int_inputNum - 1])
@@ -264,22 +276,124 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    # def showWordsOnBoard(self):
-    #     # chess_images = glob.glob(self.dirPath)
-    #
-    #     # 1.Calibrate: get Intrinsic(self.mtx), distortion(self.dist), extrinsic(self.ext)
-    #     self.findParam()
-    #
-    #     # 2.Input a “Word” less than 6 char in English in the textEdit box
-    #     self.string = self.ui.lineEdit.text()[:6].upper()
-    #
-    #
-    #
-    #
-    #     print(self.string)
-    #
-    #     cv2.waitKey(0)
-    #     cv2.destroyAllWindows()
+    def getEndpointsCoordinate(self, line):
+        # return coordinates of a line's 2 endpoints
+        co = ((int(line[0][0]), int(line[0][1])), (int(line[1][0]), int(line[1][1])))
+        return co
+
+    def getLineList(self, alphabet):
+        # 他媽的記得把fs改成self.
+        ch = self.fs.getNode(alphabet).mat()
+
+        lineList = []
+
+        for line in range(len(ch)):
+            lineList.append(ch[line])
+
+        return lineList
+
+    def baseToIndex(self, co, base):
+        index = 0
+        if co == (0,2):
+            index = base-2
+        elif co == (1,0):
+            index = base-1
+        elif co == (0,0):
+            index = base
+        elif co == (1,2):
+            index = base+6
+        elif co == (1,1):
+            index = base+7
+        elif co == (1,0):
+            index = base+8
+        elif co == (2,2):
+            index = base+14
+        elif co == (2,1):
+            index = base+15
+        elif co == (2,0):
+            index = base+16
+
+        return index
+    def drawLine(self, img, indexStart, indexEnd):
+        x1 = int(tuple(self.imgpoints[0][indexStart][0])[0] // 4)
+        y1 = int(tuple(self.imgpoints[0][indexStart][0])[1] // 4)
+        print((x1, y1))
+
+        x2 = int(tuple(self.imgpoints[0][indexEnd][0])[0] // 4)
+        y2 = int(tuple(self.imgpoints[0][indexEnd][0])[1] // 4)
+        print((x2, y2))
+
+        cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 5)
+
+
+
+    def showWordsOnBoard(self):
+
+        # 1.Calibrate: get Intrinsic(self.mtx), distortion(self.dist), extrinsic(self.ext)
+        self.findParam()
+
+        # 2.Input a “Word” less than 6 char in English in the textEdit box
+        self.string = self.ui.lineEdit.text()[:6].upper()
+
+        # 3.Derive the shape of the “Word” by using the provided library
+        self.fs = cv2.FileStorage('Q3_Image/Q2_lib/alphabet_lib_onboard.txt', cv2.FILE_STORAGE_READ)
+
+        # ch = self.fs.getNode('K').mat()
+        # print(type(ch))
+        # print(ch)
+        # print(tuple(ch[0][0]))
+
+        alphabet = 'K'
+        self.string = self.ui.lineEdit.text()[:6].upper()
+
+
+        # for alphabet in self.string:
+        #     print(f'{alphabet}')
+        #     lineList = self.getLineList(alphabet)
+        #
+        #     index = 0
+        #
+        #     for line in lineList:
+        #         co = self.getEndpointsCoordinate(line)
+        #         addOffsetCo = self.addOffset(co, index)
+        #         print(f'co:{co}')
+        #         index = index+1
+        #     print(f'===================')
+
+
+        chess_images = glob.glob(self.dirPath)
+        img = cv2.imread(chess_images[0])
+        img = cv2.resize(img, (img.shape[0]//4, img.shape[1]//4))
+
+
+        lineList = self.getLineList(alphabet)
+
+        for line in lineList:
+            COs = self.getEndpointsCoordinate(line)
+            base = self.base[0]
+            index0 = self.baseToIndex(COs[0], base)
+            index1 = self.baseToIndex(COs[1], base)
+
+            self.drawLine(img, index0, index1)
+
+        cv2.imshow('result', img)
+
+        # for index in range(len(chess_images)):
+        #     img = cv2.imread(chess_images[index])
+        #     img = cv2.resize(img, (img.shape[0]//4, img.shape[1]//4))
+        #     # cv2.imshow('img', img)
+        #     # cv2.waitKey(500)
+        #
+        #     for line in range(len(ch)):
+        #         cv2.line(img, tuple(ch[line][0]), tuple(ch[line][1]), (0,0,255), 5)
+        #     cv2.imshow('Result', img)
+        #     cv2.waitKey(500)
+        #     cv2.destroyWindow('Result')
+
+
+
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
 
     # def showWordsVertically():
