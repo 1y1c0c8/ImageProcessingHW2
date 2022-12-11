@@ -285,6 +285,8 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         return lineList
 
     def baseToIndex(self, co, base):
+        # index = 8*co[0] - col[1]
+
         index = 0
         if co == (0,2):
             index = base-2
@@ -306,20 +308,20 @@ class MainWindow_controller(QtWidgets.QMainWindow):
             index = base+16
 
         return index
-    def drawLine(self, img, indexStart, indexEnd):
-        x1 = int(tuple(self.imgpoints[0][indexStart][0])[0] // 4)
-        y1 = int(tuple(self.imgpoints[0][indexStart][0])[1] // 4)
+    def drawLine(self, img, imgIndex, indexStart, indexEnd):
+        x1 = int(tuple(self.imgpoints[imgIndex][indexStart][0])[0] // 4)
+        y1 = int(tuple(self.imgpoints[imgIndex][indexStart][0])[1] // 4)
         # print(indexStart)
         # print((x1, y1))
 
-        x2 = int(tuple(self.imgpoints[0][indexEnd][0])[0] // 4)
-        y2 = int(tuple(self.imgpoints[0][indexEnd][0])[1] // 4)
+        x2 = int(tuple(self.imgpoints[imgIndex][indexEnd][0])[0] // 4)
+        y2 = int(tuple(self.imgpoints[imgIndex][indexEnd][0])[1] // 4)
         # print(indexEnd)
         # print((x2, y2))
 
         cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 5)
 
-    def drawAnAlphabet(self, img, alphabet, alphabetIndex):
+    def drawAnAlphabet(self, img, imgIndex, alphabet, alphabetIndex):
         lineList = self.getLineList(alphabet)
 
         for line in lineList:
@@ -331,7 +333,7 @@ class MainWindow_controller(QtWidgets.QMainWindow):
             index1 = self.baseToIndex(COs[1], base)
 
 
-            self.drawLine(img, index0, index1)
+            self.drawLine(img, imgIndex, index0, index1)
 
 
     def showWordsOnBoard(self):
@@ -346,22 +348,22 @@ class MainWindow_controller(QtWidgets.QMainWindow):
         self.fs = cv2.FileStorage('Q3_Image/Q2_lib/alphabet_lib_onboard.txt', cv2.FILE_STORAGE_READ)
 
 
-        alphabet = 'K'
         self.string = self.ui.lineEdit.text()[:6].upper()
 
 
-        chess_images = glob.glob(self.dirPath)
-        img = cv2.imread(chess_images[0])
-        img = cv2.resize(img, (img.shape[0]//4, img.shape[1]//4))
 
 
-        # self.drawAnAlphabet(img, alphabet, 0)
 
+        imgIndex = 1
         alphabetIndex = 0
-        for alphabet in self.string:
-            self.drawAnAlphabet(img, alphabet, alphabetIndex)
-            alphabetIndex = alphabetIndex+1
 
+        chess_images = glob.glob(self.dirPath)
+        img = cv2.imread(chess_images[imgIndex])
+        img = cv2.resize(img, (img.shape[0] // 4, img.shape[1] // 4))
+
+        for alphabet in self.string:
+            self.drawAnAlphabet(img, imgIndex, alphabet, alphabetIndex)
+            alphabetIndex = alphabetIndex+1
 
         cv2.imshow('result', img)
         print('==========================')
